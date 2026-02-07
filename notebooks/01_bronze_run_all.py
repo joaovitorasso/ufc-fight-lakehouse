@@ -10,9 +10,11 @@
 #     ufc.bronze_events / ufc.bronze_fights / ufc.bronze_fighters
 
 # COMMAND ----------
+
 # MAGIC %run ./00_setup_databricks
 
 # COMMAND ----------
+
 from datetime import date
 from src.ufc.config import UFCConfig
 from src.ufc.common import make_run_id
@@ -20,7 +22,7 @@ from src.ufc.pipelines.events_pipeline import run_events_pipeline
 from src.ufc.pipelines.fights_pipeline import run_fights_pipeline
 from src.ufc.pipelines.fighters_pipeline import run_fighters_pipeline
 
-BRONZE_ROOT = "dbfs:/FileStore/ufc/bronze"
+BRONZE_ROOT = "dbfs:/Volumes/ufc_fight/default/ufc_lakehouse/ufc/bronze"
 INGESTION_DATE = str(date.today())
 RUN_ID = make_run_id()
 
@@ -31,18 +33,22 @@ print("INGESTION_DATE:", INGESTION_DATE)
 print("RUN_ID:", RUN_ID)
 
 # COMMAND ----------
+
 n_events = run_events_pipeline(spark, cfg, ingestion_date=INGESTION_DATE, run_id=RUN_ID)
 print("[events] rows:", n_events)
 
 # COMMAND ----------
+
 n_fights = run_fights_pipeline(spark, cfg, ingestion_date=INGESTION_DATE, run_id=RUN_ID)
 print("[fights] rows:", n_fights)
 
 # COMMAND ----------
+
 n_fighters = run_fighters_pipeline(spark, cfg, ingestion_date=INGESTION_DATE, run_id=RUN_ID)
 print("[fighters] rows:", n_fighters)
 
 # COMMAND ----------
+
 # Cria tabelas externas apontando para os paths Delta
 spark.sql("CREATE DATABASE IF NOT EXISTS ufc")
 
