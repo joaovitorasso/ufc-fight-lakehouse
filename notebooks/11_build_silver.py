@@ -4,7 +4,7 @@
 from pyspark.sql import functions as F
 
 # Events (events.json contém meta + arrays completed/upcoming)
-raw = spark.table("bronze_ufc_events")
+raw = spark.table("ufc.bronze_events")
 
 completed = raw.select(F.explode("completed").alias("e"), "run_date")
 upcoming  = raw.select(F.explode("upcoming").alias("e"), "run_date")
@@ -23,10 +23,10 @@ events = (
     .dropDuplicates(["event_id", "status"])
 )
 
-events.write.mode("overwrite").format("delta").saveAsTable("silver_ufc_events")
+events.write.mode("overwrite").format("delta").saveAsTable("ufc.silver_events")
 
 # Fights
-fights_raw = spark.table("bronze_ufc_fights")
+fights_raw = spark.table("ufc.bronze_fights")
 
 fights = (
     fights_raw
@@ -38,10 +38,10 @@ fights = (
     .dropDuplicates(["fight_id"])
 )
 
-fights.write.mode("overwrite").format("delta").saveAsTable("silver_ufc_fights")
+fights.write.mode("overwrite").format("delta").saveAsTable("ufc.silver_fights")
 
 # Fighters (bio)
-fighters_raw = spark.table("bronze_ufc_fighters")
+fighters_raw = spark.table("ufc.bronze_fighters")
 
 fighters = (
     fighters_raw
@@ -58,7 +58,7 @@ fighters = (
     .dropDuplicates(["fighter_id"])
 )
 
-fighters.write.mode("overwrite").format("delta").saveAsTable("silver_ufc_fighters")
+fighters.write.mode("overwrite").format("delta").saveAsTable("ufc.silver_fighters")
 
 # Fighter fights history (explode)
 fighter_fights = (
@@ -80,6 +80,6 @@ fighter_fights = (
     )
 )
 
-fighter_fights.write.mode("overwrite").format("delta").saveAsTable("silver_ufc_fighter_fights")
+fighter_fights.write.mode("overwrite").format("delta").saveAsTable("ufc.silver_fighter_fights")
 
 display(events.limit(10))
