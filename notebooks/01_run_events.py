@@ -1,14 +1,39 @@
 # Databricks notebook source
+import os
 import sys
 from datetime import date
 
-# 1) Ajuste esse caminho para a raiz do seu projeto no Workspace
-PROJECT_ROOT = "/Workspace/Users/joaovitorasso@hotmail.com/ufc-lakehouse"
+
+def _current_user() -> str | None:
+    # funciona em Databricks notebooks
+    try:
+        return (
+            dbutils.notebook.entry_point.getDbutils()
+            .notebook()
+            .getContext()
+            .tags()
+            .apply("user")
+        )
+    except Exception:
+        return None
+
+
+# 1) Raiz do projeto no Workspace (sem hardcode de e-mail)
+USER = _current_user() or "<seu_email@empresa.com>"
+_candidates = [
+    f"/Workspace/Users/{USER}/ufc-fight-lakehouse",
+    f"/Workspace/Users/{USER}/ufc-fights-lakehouse",
+]
+PROJECT_ROOT = next((p for p in _candidates if os.path.exists(p)), _candidates[0])
 if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
-# 2) No Free Edition, use FileStore (mais fácil que /mnt)
-BRONZE_ROOT = "dbfs:/FileStore/ufc/bronze"
+# 2) Storage: por padrao use Unity Catalog Volume (evita /FileStore, que pode estar bloqueado)
+#    Se voce nao tiver Volume, use: dbfs:/tmp/ufc/bronze
+BRONZE_ROOT = os.environ.get(
+    "UFC_BRONZE_ROOT",
+    "dbfs:/Volumes/ufc_fight/default/ufc_lakehouse/ufc/bronze",
+)
 
 # 3) Uma data de ingestão consistente
 INGESTION_DATE = str(date.today())

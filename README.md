@@ -1,6 +1,10 @@
-# ufc-lakehouse (Databricks Free Edition friendly)
+# ufc-fight-lakehouse (Databricks friendly)
 
-Este projeto constrói um mini *lakehouse* de dados do **ufcstats.com** usando:
+Este projeto constrói um mini *lakehouse* de dados do **ufcstats.com**.
+
+Ele roda bem em workspaces corporativos onde:
+- **Public DBFS root (/FileStore) está desabilitado**
+- você usa **Unity Catalog Volumes (/Volumes/...)**
 
 - **GitHub Actions** para **extrair** (porque o Databricks Free Edition pode bloquear DNS/egress)
 - Upload do resultado (ZIP) para o **DBFS** via API
@@ -42,7 +46,28 @@ Crie **Repository Secrets**:
 
 O workflow está em `.github/workflows/pipeline.yml`.
 
-## Configurar Databricks
+## Rodar direto no Databricks (sem GitHub Actions)
+
+1) Crie (ou escolha) um Volume para armazenar os dados:
+
+```sql
+USE CATALOG ufc_fight;
+CREATE VOLUME IF NOT EXISTS default.ufc_lakehouse;
+```
+
+2) Use o volume como raíz do Bronze (exemplo):
+
+```
+UFC_BRONZE_ROOT=dbfs:/Volumes/ufc_fight/default/ufc_lakehouse/ufc/bronze
+```
+
+Nos notebooks `01_run_events.py`, `02_run_fights.py`, `03_run_fighters.py` você pode:
+- setar a variável de ambiente `UFC_BRONZE_ROOT`, ou
+- editar `BRONZE_ROOT` direto.
+
+Os checkpoints são gravados em `.../_checkpoints/*.json` usando `dbutils.fs` (evita erros do /dbfs).
+
+## Configurar Databricks (modo Job/GitHub Actions)
 
 1. Importe os notebooks:
    - `notebooks/10_ingest_landing.py`
@@ -77,25 +102,3 @@ O workflow está em `.github/workflows/pipeline.yml`.
 
 - Para manter o pipeline rápido e gentil com o site, usamos `MAX_EVENTS` (padrão 20).
 - Se quiser histórico maior, aumente `MAX_EVENTS` — mas isso aumenta tempo de execução.
-
-## Rodar no Databricks (sem Git/GitHub Actions)
-
-1. Faça upload do ZIP desta versão (databricks) para o Workspace (Workspace > Import) **ou** extraia os arquivos em:
-   `/Workspace/Users/<seu_email>/ufc-fights-lakehouse`
-
-2. Abra e rode o notebook:
-   - `notebooks/99_run_all`  (executa setup + bronze + silver + gold)
-
-   Alternativa (passo a passo):
-   - `notebooks/00_setup_databricks`
-   - `notebooks/01_bronze_run_all`
-   - `notebooks/11_build_silver`
-   - `notebooks/12_build_gold`
-
-3. Saídas principais:
-   - Delta files: `dbfs:/FileStore/ufc/bronze/delta/...`
-   - Tabelas: `ufc.bronze_*`, `ufc.silver_*`, `ufc.gold_*`
-
-### Segurança
-Este pacote foi "limpo" para não incluir arquivos sensíveis (ex.: `.env` e `.git`).
-Se você já versionou/compartilhou tokens em algum lugar, revogue/rotacione esses tokens imediatamente.
